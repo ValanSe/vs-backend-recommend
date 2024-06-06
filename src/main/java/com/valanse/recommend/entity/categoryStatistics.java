@@ -17,7 +17,6 @@ import lombok.NoArgsConstructor;
 public class categoryStatistics {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private String category;
 
     private Integer totalAnswers;
