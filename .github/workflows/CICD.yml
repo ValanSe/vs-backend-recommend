@@ -39,13 +39,13 @@ jobs:
       run: docker-compose build
 
     - name: Tag Docker image
-      run: docker tag makingjjj/valanse-recommend-server makingjjj/valanse-recommend-server:${{ github.sha }}
+      run: docker tag makingjjj/valanse-recommendation-server makingjjj/valanse-recommendation-server:${{ github.sha }}
 
     - name: Login to Docker Hub
       run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_ACCESS_TOKEN }}
 
     - name: Push Docker image to Docker Hub
-      run: docker push ${{ secrets.DOCKER_USERNAME }}/valanse-recommend-server:${{ github.sha }}
+      run: docker push ${{ secrets.DOCKER_USERNAME }}/valanse-recommendation-server:${{ github.sha }}
 
     - name: Deploy to prod
       uses: appleboy/ssh-action@master
@@ -57,7 +57,7 @@ jobs:
           cd valanse-project/recommendationServer
           CURRENT_DIR=$(pwd)
           echo "IMAGE_TAG=${{ github.sha }}" > .env
-          docker pull ${{ secrets.DOCKER_USERNAME }}/valanse-recommend-server:${{ github.sha }}
+          docker pull ${{ secrets.DOCKER_USERNAME }}/valanse-recommendation-server:${{ github.sha }}
           docker-compose -f $CURRENT_DIR/docker-compose.yml stop recommendationsystem
           docker-compose -f $CURRENT_DIR/docker-compose.yml rm -f recommendationsystem
           docker-compose -f $CURRENT_DIR/docker-compose.yml up -d recommendationsystem
