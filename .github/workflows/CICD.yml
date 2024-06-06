@@ -39,7 +39,7 @@ jobs:
       run: docker-compose build
 
     - name: Tag Docker image
-      run: docker tag makingjjj/valanse-recommend-server:latest makingjjj/valanse-recommend-server:${{ github.sha }}
+      run: docker tag makingjjj/valanse-recommend-server makingjjj/valanse-recommend-server:${{ github.sha }}
 
     - name: Login to Docker Hub
       run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_ACCESS_TOKEN }}
