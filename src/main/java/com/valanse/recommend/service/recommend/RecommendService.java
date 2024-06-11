@@ -1,11 +1,13 @@
 package com.valanse.recommend.service.recommend;
 
 import com.valanse.recommend.entity.FavoriteCategory;
+import com.valanse.recommend.entity.User;
 import com.valanse.recommend.entity.UserAnswer;
 import com.valanse.recommend.entity.UserCategoryPreference;
 import com.valanse.recommend.repository.jpa.FavoriteCategoryRepository;
 import com.valanse.recommend.repository.jpa.UserAnswerRepository;
 import com.valanse.recommend.repository.jpa.UserCategoryPreferenceRepository;
+import com.valanse.recommend.repository.jpa.UserRepository;
 import com.valanse.recommend.service.kafka.EventTypes;
 import com.valanse.recommend.service.kafka.KafkaProducerService;
 import com.valanse.recommend.util.DataParseUtil;
@@ -30,6 +32,7 @@ public class RecommendService {
     private final UserCategoryPreferenceRepository userCategoryPreferenceRepository;
     private final FavoriteCategoryRepository favoriteCategoryRepository;
     private final UserAnswerRepository userAnswerRepository;
+    private final UserRepository userRepository;
 
     public void checkFavoriteCategoryChange(String data) {
         try {
@@ -80,17 +83,39 @@ public class RecommendService {
             Integer userId = Integer.valueOf(dataMap.get("userId"));
             String category = dataMap.get("category");
 
-            // 해당 카테고리를 좋아하는 유저들의 userId 리스트 생성
-            List<Integer> similarUserList = favoriteCategoryRepository.findAllByCategory(category)
-                    .stream()
-                    .map(FavoriteCategory::getUserId)
-                    .toList();
+            // Epsilon 값 설정 (0과 1 사이의 값)
+            double epsilon = 0.7; // 엡실론 값으로 유저가 속한 집합 내의 선호 문제 추천
 
-            // 최대 10개의 퀴즈만 가져오도록 페이지 요청 설정
-            PageRequest pageRequest = PageRequest.of(0, 10);
+            // 랜덤 값 생성
+            double randomValue = Math.random();
 
-            List<Integer> recommendedQuizIds = userAnswerRepository.findRecommendedQuizzes(userId, similarUserList, pageRequest);
-            log.info("Recommended quizzes for user_id: {} based on favorite category: {} are: {}", userId, category, recommendedQuizIds);
+            List<Integer> recommendedQuizIds;
+
+            if (randomValue < epsilon) {
+                // Epsilon의 확률로 유저가 속한 집합 내 다른 유저들이 선호한 문제를 랜덤하게 추천
+                List<Integer> similarUserIds = favoriteCategoryRepository.findAllByCategory(category)
+                        .stream()
+                        .map(FavoriteCategory::getUserId)
+                        .toList();
+
+                // 최대 10개의 퀴즈만 가져오도록 페이지 요청 설정
+                PageRequest pageRequest = PageRequest.of(0, 10);
+
+                recommendedQuizIds = userAnswerRepository.findRecommendedQuizzes(userId, similarUserIds, pageRequest);
+                log.info("Recommended quizzes for user_id: {} based on favorite category: {} are: {}", userId, category, recommendedQuizIds);
+            } else {
+                // (1-Epsilon)의 확률로 유저가 속하지 않은 다른 집합 내 유저들이 선호한 문제를 랜덤하게 추천
+                List<Integer> otherUserIds = userRepository.findAll()
+                        .stream()
+                        .map(User::getUserId)
+                        .filter(id -> !id.equals(userId))
+                        .toList();
+                // 최대 10개의 퀴즈만 가져오도록 페이지 요청 설정
+                PageRequest pageRequest = PageRequest.of(0, 10);
+
+                recommendedQuizIds = userAnswerRepository.findRecommendedQuizzesFromOtherUsers(userId, otherUserIds, pageRequest);
+                log.info("Recommended quizzes for user_id: {} from other users are: {}", userId, recommendedQuizIds);
+            }
 
             String recommendedQuizIdsStr = recommendedQuizIds.stream()
                     .map(String::valueOf)
