@@ -8,23 +8,24 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Formula;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class categoryStatistics {
-
+public class Comment {
     @Id
-    private String category;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer commentId;
 
-    private Integer totalAnswers;
-    private Integer totalScore;
+    private Integer authorUserId;
 
-    @Formula("total_score / total_answers")
-    private Float avgPreference;
+    private String content;
 
+    private LocalDateTime createdAt;
 
+    private LocalDateTime updatedAt;
 }
